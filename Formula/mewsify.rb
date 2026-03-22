@@ -7,6 +7,12 @@ class Mewsify < Formula
 
   depends_on "python@3.12"
 
+  # Prevents Homebrew's linkage fixer from rewriting @rpath dylib IDs inside
+  # the venv — compiled Python extensions (e.g. pydantic_core) ship with short
+  # @rpath placeholders; the absolute replacement paths overflow the Mach-O
+  # header and cause "Failed to fix install linkage" errors.
+  skip_clean "libexec"
+
   def install
     venv = libexec/"venv"
     system Formula["python@3.12"].opt_bin/"python3.12", "-m", "venv", venv
