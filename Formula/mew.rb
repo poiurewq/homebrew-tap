@@ -31,7 +31,9 @@ class Mew < Formula
       export ESPEAK_DATA_PATH="#{espeak_pkg}"
       export HF_HUB_DISABLE_TELEMETRY=1
       export HF_HUB_DISABLE_IMPLICIT_TOKEN=1
+      export HF_HUB_DISABLE_EXPERIMENTAL_WARNING=1
       export DO_NOT_TRACK=1
+      export PYTHONWARNINGS="ignore::UserWarning:huggingface_hub"
       exec "#{mew_venv}/bin/mew" "$@"
     SH
     (bin/"mew").chmod 0755
@@ -96,12 +98,20 @@ class Mew < Formula
       # - pip/setuptools: not needed after install
       # - pygments: transitive via rich→spacy chain
       ohai "Cleaning up unnecessary packages (~190MB)..."
+      # Patch phonemizer to not import SegmentsBackend (which pulls in
+      # segments → csvw → babel, ~40MB we don't need). We only use EspeakBackend.
+      inreplace site_packages/"phonemizer/backend/__init__.py",
+                "from .segments import SegmentsBackend", ""
+      inreplace site_packages/"phonemizer/backend/__init__.py",
+                "EspeakBackend, FestivalBackend, SegmentsBackend, EspeakMbrolaBackend",
+                "EspeakBackend, FestivalBackend, EspeakMbrolaBackend"
       system pip, "uninstall", "-y", "--quiet",
         "sympy", "mpmath",
         "spacy", "thinc", "blis", "srsly", "preshed", "cymem", "murmurhash",
         "spacy-legacy", "spacy-loggers", "confection", "weasel", "smart-open",
         "cloudpathlib",
-        "babel", "rdflib", "csvw", "language-tags", "isodate",
+        "segments", "csvw", "babel", "rdflib", "language-tags", "isodate",
+        "regex",
         "pygments",
         "pip", "setuptools"
     end
