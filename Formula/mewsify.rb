@@ -30,6 +30,11 @@ class Mewsify < Formula
     # mewsify's own pyproject.toml and installed by the second pip call.
     system pip, "install", "--no-deps",
       "https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl"
+    # kittentts imports misaki at the top of onnx_model.py but never uses it
+    # (phonemization uses phonemizer.backend.EspeakBackend instead). Remove the
+    # dead import so we don't need misaki and its heavy deps (torch, CUDA).
+    inreplace venv/"lib/python3.12/site-packages/kittentts/onnx_model.py",
+              "from misaki import en, espeak\n", ""
     system pip, "install", libexec/"src/mewsify"
     bin.install_symlink libexec/"venv/bin/mewsify"
   end
