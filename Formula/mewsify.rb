@@ -12,6 +12,15 @@ class Mewsify < Formula
     # pip-install it after the linkage fixer has already run.
     (libexec/"src").install "mewsify"
     man1.install libexec/"src/mewsify/mewsify.1"
+
+    # Write a wrapper now so it exists when Homebrew's link pass runs
+    # (link happens after install but before post_install). The venv
+    # entry point it delegates to is created later by post_install.
+    (bin/"mewsify").write <<~SH
+      #!/bin/bash
+      exec "#{libexec}/venv/bin/mewsify" "$@"
+    SH
+    (bin/"mewsify").chmod 0755
   end
 
   # Build the venv in post_install so it doesn't exist when Homebrew's
@@ -36,7 +45,6 @@ class Mewsify < Formula
     inreplace venv/"lib/python3.12/site-packages/kittentts/onnx_model.py",
               "from misaki import en, espeak\n", ""
     system pip, "install", libexec/"src/mewsify"
-    bin.install_symlink libexec/"venv/bin/mewsify"
   end
 
   test do
