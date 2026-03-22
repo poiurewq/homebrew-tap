@@ -48,6 +48,9 @@ class Mew < Formula
     # dead import so we don't need misaki and its heavy deps (torch, CUDA).
     inreplace venv/"lib/python3.12/site-packages/kittentts/onnx_model.py",
               "from misaki import en, espeak\n", ""
+    # Suppress kittentts's "Generating audio for text: ..." print
+    inreplace venv/"lib/python3.12/site-packages/kittentts/get_model.py",
+              'print(f"Generating audio for text: {text}")', ""
     system pip, "install", libexec/"src/mew"
   end
 
