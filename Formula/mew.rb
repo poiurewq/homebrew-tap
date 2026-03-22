@@ -1,11 +1,19 @@
 class Mew < Formula
   desc "Preprocess Markdown study notes and synthesize speech via KittenTTS"
   homepage "https://github.com/poiurewq/scripts"
-  url "https://github.com/poiurewq/scripts/archive/refs/tags/mew-v0.1.2.tar.gz"
-  sha256 "4147f044c05e59f01ea14e509d7187b6a4240bf6d4ce78c6a6ca873684527fd9"
+  url "https://github.com/poiurewq/scripts/archive/refs/tags/mew-v0.1.3.tar.gz"
+  sha256 "f7eb516f354305068764b17a492e0d8ef802c0b724ed3a3b50b8657f5f13da5e"
   license "MIT"
 
   depends_on "python@3.12"
+
+  def mew_venv
+    var/"mew/venv"
+  end
+
+  def mew_python_version
+    "3.12"
+  end
 
   def install
     # Stash the Python source package into libexec/src so post_install can
@@ -16,12 +24,15 @@ class Mew < Formula
     # Write a wrapper now so it exists when Homebrew's link pass runs
     # (link happens after install but before post_install). The venv
     # entry point it delegates to is created later by post_install.
-    espeak_pkg = libexec/"venv/lib/python3.12/site-packages/espeakng_loader"
+    espeak_pkg = mew_venv/"lib/python#{mew_python_version}/site-packages/espeakng_loader"
     (bin/"mew").write <<~SH
       #!/bin/bash
       export PHONEMIZER_ESPEAK_LIBRARY="#{espeak_pkg}/libespeak-ng.dylib"
       export ESPEAK_DATA_PATH="#{espeak_pkg}"
-      exec "#{libexec}/venv/bin/mew" "$@"
+      export HF_HUB_DISABLE_TELEMETRY=1
+      export HF_HUB_DISABLE_IMPLICIT_TOKEN=1
+      export DO_NOT_TRACK=1
+      exec "#{mew_venv}/bin/mew" "$@"
     SH
     (bin/"mew").chmod 0755
   end
@@ -31,27 +42,79 @@ class Mew < Formula
   # extensions (e.g. pydantic_core) carry short @rpath dylib IDs that
   # overflow the Mach-O header when the fixer tries to rewrite them to
   # absolute paths.
+  #
+  # The venv lives in var/mew/venv/ (persistent across upgrades) so that
+  # patch releases only need to reinstall the mew package itself (~3s)
+  # instead of recreating the entire environment (~60s).
   def post_install
-    ohai "Setting up mew's Python environment — this may take a minute..."
-    venv = libexec/"venv"
-    system Formula["python@3.12"].opt_bin/"python3.12", "-m", "venv", venv
+    py = Formula["python@3.12"].opt_bin/"python#{mew_python_version}"
+    venv = mew_venv
     pip = venv/"bin/pip"
-    system pip, "install", "--upgrade", "pip", "--quiet"
-    # Install kittentts without its declared deps: misaki[en] transitively pulls
-    # torch and NVIDIA CUDA packages (~700 MB on Mac, ~3 GB on Linux) that are
-    # never used when clean_text=False. All actually-needed deps are declared in
-    # mew's own pyproject.toml and installed by the second pip call.
-    system pip, "install", "--no-deps",
-      "https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl"
-    # kittentts imports misaki at the top of onnx_model.py but never uses it
-    # (phonemization uses phonemizer.backend.EspeakBackend instead). Remove the
-    # dead import so we don't need misaki and its heavy deps (torch, CUDA).
-    inreplace venv/"lib/python3.12/site-packages/kittentts/onnx_model.py",
-              "from misaki import en, espeak\n", ""
-    # Suppress kittentts's "Generating audio for text: ..." print
-    inreplace venv/"lib/python3.12/site-packages/kittentts/get_model.py",
-              'print(f"Generating audio for text: {text}")', ""
-    system pip, "install", libexec/"src/mew"
+    site_packages = venv/"lib/python#{mew_python_version}/site-packages"
+
+    # Detect if we need a full rebuild: no venv, or Python version changed.
+    venv_python = venv/"bin/python#{mew_python_version}"
+    needs_full_install = !venv_python.exist? || !venv_python.executable?
+
+    if needs_full_install
+      ohai "Setting up mew's Python environment — this may take a minute..."
+      # Remove stale venv if Python version changed
+      venv.rmtree if venv.exist?
+      system py, "-m", "venv", venv
+      system pip, "install", "--upgrade", "pip", "--quiet"
+      # Install kittentts without its declared deps: misaki[en] transitively
+      # pulls torch and NVIDIA CUDA packages (~700 MB on Mac, ~3 GB on Linux)
+      # that are never used when clean_text=False. All actually-needed deps
+      # are declared in mew's own pyproject.toml.
+      system pip, "install", "--no-deps",
+        "https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl"
+      # kittentts imports misaki at the top of onnx_model.py but never uses it
+      # (phonemization uses phonemizer.backend.EspeakBackend instead). Remove
+      # the dead import so we don't need misaki and its heavy deps (torch, CUDA).
+      inreplace site_packages/"kittentts/onnx_model.py",
+                "from misaki import en, espeak\n", ""
+      # Suppress kittentts's "Generating audio for text: ..." print
+      inreplace site_packages/"kittentts/get_model.py",
+                'print(f"Generating audio for text: {text}")', ""
+    else
+      ohai "Upgrading mew (reusing existing Python environment)..."
+    end
+
+    # Always (re)install the mew package — this is the only part that changes
+    # between releases.
+    system pip, "install", "--upgrade", "--force-reinstall", "--no-deps",
+      libexec/"src/mew"
+    # Re-install mew's own deps in case they changed (pip is fast when
+    # requirements are already satisfied).
+    system pip, "install", libexec/"src/mew", "--quiet"
+
+    if needs_full_install
+      # Strip packages that are not needed at runtime to cut install size.
+      # - sympy/mpmath: onnxruntime dep, only used for symbolic optimization
+      # - spacy + ecosystem: kittentts declares it but never imports it
+      # - babel/rdflib/csvw: transitive via phonemizer→segments→csvw
+      # - pip/setuptools: not needed after install
+      # - pygments: transitive via rich→spacy chain
+      ohai "Cleaning up unnecessary packages (~190MB)..."
+      system pip, "uninstall", "-y", "--quiet",
+        "sympy", "mpmath",
+        "spacy", "thinc", "blis", "srsly", "preshed", "cymem", "murmurhash",
+        "spacy-legacy", "spacy-loggers", "confection", "weasel", "smart-open",
+        "cloudpathlib",
+        "babel", "rdflib", "csvw", "language-tags", "isodate",
+        "pygments",
+        "pip", "setuptools"
+    end
+  end
+
+  def caveats
+    <<~EOS
+      mew's Python environment is stored in:
+        #{mew_venv}
+
+      It persists across upgrades for speed. To remove it completely:
+        rm -rf #{mew_venv}
+    EOS
   end
 
   test do
