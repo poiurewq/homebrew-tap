@@ -7,13 +7,19 @@ class Mewsify < Formula
 
   depends_on "python@3.12"
 
-  # Prevents Homebrew's linkage fixer from rewriting @rpath dylib IDs inside
-  # the venv — compiled Python extensions (e.g. pydantic_core) ship with short
-  # @rpath placeholders; the absolute replacement paths overflow the Mach-O
-  # header and cause "Failed to fix install linkage" errors.
-  skip_clean "libexec"
-
   def install
+    # Stash the Python source package into libexec/src so post_install can
+    # pip-install it after the linkage fixer has already run.
+    (libexec/"src").install "mewsify"
+    man1.install libexec/"src/mewsify/mewsify.1"
+  end
+
+  # Build the venv in post_install so it doesn't exist when Homebrew's
+  # linkage fixer runs (between install and post_install). Compiled Python
+  # extensions (e.g. pydantic_core) carry short @rpath dylib IDs that
+  # overflow the Mach-O header when the fixer tries to rewrite them to
+  # absolute paths.
+  def post_install
     venv = libexec/"venv"
     system Formula["python@3.12"].opt_bin/"python3.12", "-m", "venv", venv
     pip = venv/"bin/pip"
@@ -24,9 +30,8 @@ class Mewsify < Formula
     # mewsify's own pyproject.toml and installed by the second pip call.
     system pip, "install", "--no-deps",
       "https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl"
-    system pip, "install", "mewsify/"
+    system pip, "install", libexec/"src/mewsify"
     bin.install_symlink libexec/"venv/bin/mewsify"
-    man1.install "mewsify/mewsify.1"
   end
 
   test do
