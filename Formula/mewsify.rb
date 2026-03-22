@@ -9,7 +9,7 @@ class Mewsify < Formula
 
   def install
     venv = libexec/"venv"
-    system Formula["python@3.12"].opt_bin/"python3", "-m", "venv", venv
+    system Formula["python@3.12"].opt_bin/"python3.12", "-m", "venv", venv
     pip = venv/"bin/pip"
     system pip, "install", "--upgrade", "pip", "--quiet"
     # Install kittentts without its declared deps: misaki[en] transitively pulls
