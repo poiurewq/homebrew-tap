@@ -30,8 +30,6 @@ class Mew < Formula
       export PHONEMIZER_ESPEAK_LIBRARY="#{espeak_pkg}/libespeak-ng.dylib"
       export ESPEAK_DATA_PATH="#{espeak_pkg}"
       export HF_HUB_DISABLE_TELEMETRY=1
-      export HF_HUB_DISABLE_IMPLICIT_TOKEN=1
-      export HF_HUB_DISABLE_EXPERIMENTAL_WARNING=1
       export DO_NOT_TRACK=1
       export PYTHONWARNINGS="ignore::UserWarning:huggingface_hub"
       exec "#{mew_venv}/bin/mew" "$@"
