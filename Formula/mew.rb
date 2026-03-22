@@ -2,7 +2,7 @@ class Mew < Formula
   desc "Preprocess Markdown study notes and synthesize speech via KittenTTS"
   homepage "https://github.com/poiurewq/scripts"
   url "https://github.com/poiurewq/scripts/archive/refs/tags/mew-v0.1.0.tar.gz"
-  sha256 "PLACEHOLDER"
+  sha256 "9398ac602089d3f664fd34d93b5f82f5f910be456b746c2ff1403560e03180cf"
   license "MIT"
 
   depends_on "python@3.12"
