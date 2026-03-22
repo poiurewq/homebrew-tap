@@ -1,8 +1,8 @@
 class Mew < Formula
   desc "Preprocess Markdown study notes and synthesize speech via KittenTTS"
   homepage "https://github.com/poiurewq/scripts"
-  url "https://github.com/poiurewq/scripts/archive/refs/tags/mew-v0.1.0.tar.gz"
-  sha256 "9398ac602089d3f664fd34d93b5f82f5f910be456b746c2ff1403560e03180cf"
+  url "https://github.com/poiurewq/scripts/archive/refs/tags/mew-v0.1.1.tar.gz"
+  sha256 "adbc0f06782fb6b9907d729d6f3d9a746f4bdafe832ab08d68769ef6a455fa05"
   license "MIT"
 
   depends_on "python@3.12"
@@ -32,6 +32,7 @@ class Mew < Formula
   # overflow the Mach-O header when the fixer tries to rewrite them to
   # absolute paths.
   def post_install
+    ohai "Setting up mew's Python environment — this may take a minute..."
     venv = libexec/"venv"
     system Formula["python@3.12"].opt_bin/"python3.12", "-m", "venv", venv
     pip = venv/"bin/pip"
