@@ -95,7 +95,7 @@ class Mew < Formula
       # - sympy/mpmath: onnxruntime dep, only used for symbolic optimization
       # - spacy + ecosystem: kittentts declares it but never imports it
       # - babel/rdflib/csvw: transitive via phonemizer→segments→csvw
-      # - pip/setuptools: not needed after install
+      # - setuptools: not needed after install (keep pip for upgrades)
       # - pygments: transitive via rich→spacy chain
       ohai "Cleaning up unnecessary packages (~190MB)..."
       # Patch phonemizer to not import SegmentsBackend (which pulls in
@@ -113,7 +113,7 @@ class Mew < Formula
         "segments", "csvw", "babel", "rdflib", "language-tags", "isodate",
         "regex",
         "pygments",
-        "pip", "setuptools"
+        "setuptools"
     end
   end
 
