@@ -1,8 +1,8 @@
 class Mew < Formula
-  desc "Preprocess Markdown study notes and synthesize speech via KittenTTS"
+  desc "Preprocess Markdown study notes and synthesize speech via Kokoro TTS"
   homepage "https://github.com/poiurewq/scripts"
-  url "https://github.com/poiurewq/scripts/archive/refs/tags/mew-v0.2.0.tar.gz"
-  sha256 "b43dd729e14d8e9ff85870594121a6ced8ab64ed901f655060db0654adaa513b"
+  url "https://github.com/poiurewq/scripts/archive/refs/tags/mew-v0.3.0.tar.gz"
+  sha256 "46f160412c472763847abc2d27a3533f286a24e1e95542efb473ccca0e156679"
   license "MIT"
 
   depends_on "python@3.12"
@@ -29,9 +29,7 @@ class Mew < Formula
       #!/bin/bash
       export PHONEMIZER_ESPEAK_LIBRARY="#{espeak_pkg}/libespeak-ng.dylib"
       export ESPEAK_DATA_PATH="#{espeak_pkg}"
-      export HF_HUB_DISABLE_TELEMETRY=1
       export DO_NOT_TRACK=1
-      export PYTHONWARNINGS="ignore::UserWarning:huggingface_hub"
       exec "#{mew_venv}/bin/mew" "$@"
     SH
     (bin/"mew").chmod 0755
@@ -62,26 +60,13 @@ class Mew < Formula
       venv.rmtree if venv.exist?
       system py, "-m", "venv", venv
       system pip, "install", "--upgrade", "pip", "--quiet"
-      # Install kittentts without its declared deps: misaki[en] transitively
-      # pulls torch and NVIDIA CUDA packages (~700 MB on Mac, ~3 GB on Linux)
-      # that are never used when clean_text=False. All actually-needed deps
-      # are declared in mew's own pyproject.toml.
-      system pip, "install", "--no-deps",
-        "https://github.com/KittenML/KittenTTS/releases/download/0.8.1/kittentts-0.8.1-py3-none-any.whl"
-      # kittentts imports misaki at the top of onnx_model.py but never uses it
-      # (phonemization uses phonemizer.backend.EspeakBackend instead). Remove
-      # the dead import so we don't need misaki and its heavy deps (torch, CUDA).
-      inreplace site_packages/"kittentts/onnx_model.py",
-                "from misaki import en, espeak\n", ""
-      # Suppress kittentts's "Generating audio for text: ..." print
-      inreplace site_packages/"kittentts/get_model.py",
-                'print(f"Generating audio for text: {text}")', ""
     else
       ohai "Upgrading mew (reusing existing Python environment)..."
     end
 
     # Always (re)install the mew package — this is the only part that changes
-    # between releases.
+    # between releases. kokoro-onnx and its deps are declared in pyproject.toml
+    # and installed cleanly (no --no-deps hacks needed).
     system pip, "install", "--upgrade", "--force-reinstall", "--no-deps",
       libexec/"src/mew"
     # Re-install mew's own deps in case they changed (pip is fast when
@@ -91,37 +76,32 @@ class Mew < Formula
     if needs_full_install
       # Strip packages that are not needed at runtime to cut install size.
       # - sympy/mpmath: onnxruntime dep, only used for symbolic optimization
-      # - spacy + ecosystem: kittentts declares it but never imports it
-      # - babel/rdflib/csvw: transitive via phonemizer→segments→csvw
       # - setuptools: not needed after install (keep pip for upgrades)
-      # - pygments: transitive via rich→spacy chain
-      ohai "Cleaning up unnecessary packages (~190MB)..."
-      # Patch phonemizer to not import SegmentsBackend (which pulls in
-      # segments → csvw → babel, ~40MB we don't need). We only use EspeakBackend.
-      inreplace site_packages/"phonemizer/backend/__init__.py",
-                "from .segments import SegmentsBackend", ""
-      inreplace site_packages/"phonemizer/backend/__init__.py",
-                "EspeakBackend, FestivalBackend, SegmentsBackend, EspeakMbrolaBackend",
-                "EspeakBackend, FestivalBackend, EspeakMbrolaBackend"
+      ohai "Cleaning up unnecessary packages..."
       system pip, "uninstall", "-y", "--quiet",
         "sympy", "mpmath",
-        "spacy", "thinc", "blis", "srsly", "preshed", "cymem", "murmurhash",
-        "spacy-legacy", "spacy-loggers", "confection", "weasel", "smart-open",
-        "cloudpathlib",
-        "segments", "csvw", "babel", "rdflib", "language-tags", "isodate",
-        "regex",
-        "pygments",
         "setuptools"
     end
   end
 
   def caveats
     <<~EOS
-      mew's Python environment is stored in:
-        #{mew_venv}
+      mew leaves two directories that are NOT removed by `brew uninstall`:
 
-      It persists across upgrades for speed. To remove it completely:
+        #{mew_venv}
+          Python environment (persists across upgrades for speed)
+
+        ~/.config/mew/
+          User preferences (model, voice, playback settings)
+
+        ~/.cache/mew/models/
+          Kokoro model files (downloaded on first use)
+
+      To fully remove mew:
+        brew uninstall mew
         rm -rf #{mew_venv}
+        rm -rf ~/.config/mew
+        rm -rf ~/.cache/mew
     EOS
   end
 
