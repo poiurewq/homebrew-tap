@@ -1,8 +1,8 @@
 class Mew < Formula
   desc "Preprocess Markdown study notes and synthesize speech via Kokoro TTS"
-  homepage "https://github.com/poiurewq/scripts"
-  url "https://github.com/poiurewq/scripts/archive/refs/tags/mew-v0.3.0.tar.gz"
-  sha256 "46f160412c472763847abc2d27a3533f286a24e1e95542efb473ccca0e156679"
+  homepage "https://github.com/poiurewq/mew"
+  url "https://github.com/poiurewq/mew/archive/refs/tags/v0.3.0.tar.gz"
+  sha256 "0c245b34c8046015d28b6deb7979460ab67ea589e6980b20edc9cd0b0de87d17"
   license "MIT"
 
   depends_on "python@3.12"
@@ -18,7 +18,9 @@ class Mew < Formula
   def install
     # Stash the Python source package into libexec/src so post_install can
     # pip-install it after the linkage fixer has already run.
-    (libexec/"src").install "mew"
+    # Standalone repo: project files are at the archive root, not nested
+    # under a mew/ subdirectory like in the old monorepo tarball.
+    (libexec/"src/mew").install Dir["*"]
     man1.install libexec/"src/mew/mew.1"
 
     # Write a wrapper now so it exists when Homebrew's link pass runs
@@ -86,7 +88,7 @@ class Mew < Formula
 
   def caveats
     <<~EOS
-      mew leaves two directories that are NOT removed by `brew uninstall`:
+      mew leaves three directories that are NOT removed by `brew uninstall`:
 
         #{mew_venv}
           Python environment (persists across upgrades for speed)
