@@ -1,8 +1,8 @@
 class Nt < Formula
   desc "Simple indexed notes maintainer for the command line"
   homepage "https://github.com/poiurewq/scripts"
-  url "https://github.com/poiurewq/scripts/archive/refs/tags/nt-v0.1.7.tar.gz"
-  sha256 "00daee08cfd8fae01c45c7159c3b6a4441fabbe54630b48255f59d99716f36db"
+  url "https://github.com/poiurewq/scripts/archive/refs/tags/nt-v0.1.8.tar.gz"
+  sha256 "db02cd221daed2ccc6d6b728f2b1963d3d491b28b1b2bcf63519dc9754fccb0c"
   license "MIT"
 
   depends_on "zsh" => :optional
