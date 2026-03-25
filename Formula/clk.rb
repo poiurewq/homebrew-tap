@@ -12,6 +12,16 @@ class Clk < Formula
     man1.install "clk/clk.1"
   end
 
+  def caveats
+    <<~EOS
+      clk stores its log data in:
+        ${XDG_DATA_HOME:-~/.local/share}/clk/
+
+      To fully uninstall, remove that directory after running `brew uninstall clk`:
+        rm -rf "${XDG_DATA_HOME:-$HOME/.local/share}/clk"
+    EOS
+  end
+
   test do
     assert_match "clock in & out of work", shell_output("#{bin}/clk help")
   end
