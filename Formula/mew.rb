@@ -1,8 +1,8 @@
 class Mew < Formula
   desc "Preprocess Markdown study notes and synthesize speech via Kokoro TTS"
   homepage "https://github.com/poiurewq/mew"
-  url "https://github.com/poiurewq/mew/archive/refs/tags/v0.3.0.tar.gz"
-  sha256 "0c245b34c8046015d28b6deb7979460ab67ea589e6980b20edc9cd0b0de87d17"
+  url "https://github.com/poiurewq/mew/archive/refs/tags/v0.3.1.tar.gz"
+  sha256 "ef7c6bfba53e9547df90e0b05231df8ae1a80f9cd0d02a5a9f8f3a7009072a58"
   license "MIT"
 
   depends_on "python@3.12"
