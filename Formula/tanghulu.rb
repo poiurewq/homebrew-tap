@@ -1,8 +1,8 @@
 class Tanghulu < Formula
   desc "Run a string of timed focus/rest sessions with pop-up reminders"
   homepage "https://github.com/poiurewq/scripts"
-  url "https://github.com/poiurewq/scripts/archive/refs/tags/tanghulu-v0.1.2.tar.gz"
-  sha256 "703732c25d0596e45f2cc14d74aea81c1cf93b2d1d25dd5f49f225d70db21717"
+  url "https://github.com/poiurewq/scripts/archive/refs/tags/tanghulu-v0.1.3.tar.gz"
+  sha256 "f348b08bc604da926af58a2401d35b879fd4bbad1f7f2add74f6d84b2142788e"
   license "MIT"
 
   depends_on "bash"
@@ -11,6 +11,8 @@ class Tanghulu < Formula
   def install
     bin.install "tanghulu/tanghulu"
     man1.install "tanghulu/tanghulu.1"
+    bash_completion.install "tanghulu/completions/tanghulu.bash" => "tanghulu"
+    zsh_completion.install "tanghulu/completions/_tanghulu"
   end
 
   def caveats
