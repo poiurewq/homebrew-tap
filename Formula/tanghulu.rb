@@ -1,8 +1,8 @@
 class Tanghulu < Formula
   desc "Run a string of timed focus/rest sessions with pop-up reminders"
   homepage "https://github.com/poiurewq/scripts"
-  url "https://github.com/poiurewq/scripts/archive/refs/tags/tanghulu-v0.1.8.tar.gz"
-  sha256 "8b83211611f5f505143d325138686037827b786b42671a9f65bf94fafd1424d1"
+  url "https://github.com/poiurewq/scripts/archive/refs/tags/tanghulu-v0.1.9.tar.gz"
+  sha256 "0af8ba20140a94215d730b251582b2db77c9c05692b85cb5f7560d83a0cd25e4"
   license "MIT"
 
   depends_on "bash"
