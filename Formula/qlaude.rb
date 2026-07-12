@@ -1,8 +1,8 @@
 class Qlaude < Formula
   desc "Claude session utilities: conversation viewer, account manager, resource lister"
   homepage "https://github.com/poiurewq/scripts"
-  url "https://github.com/poiurewq/scripts/archive/refs/tags/qlaude-v0.2.0.tar.gz"
-  sha256 "57ccad2d0c5ccfe695856df592ab295cb1230b66de373b57ce4e710f15c90c6f"
+  url "https://github.com/poiurewq/scripts/archive/refs/tags/qlaude-v0.2.1.tar.gz"
+  sha256 "f70098513500cf76c8fbe1523862047a767c830ceced806c4c717327d80c1ea4"
   license "MIT"
 
   depends_on "jq"
