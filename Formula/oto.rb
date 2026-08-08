@@ -1,8 +1,8 @@
 class Oto < Formula
   desc "Preprocess Markdown study notes and synthesize speech via Kokoro TTS"
   homepage "https://github.com/poiurewq/oto"
-  url "https://github.com/poiurewq/oto/archive/refs/tags/v0.4.0.tar.gz"
-  sha256 "40df60741e879cba8892a46ab483b1761832cc7e443366443329db8e3563d9b5"
+  url "https://github.com/poiurewq/oto/archive/refs/tags/v0.4.1.tar.gz"
+  sha256 "0b024daec274db9209845da2971035a4fcc61a8d565aa5bb5c84b192975eaa4d"
   license "MIT"
 
   depends_on "python@3.12"
